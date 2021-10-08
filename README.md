@@ -1,5 +1,5 @@
 # Regitor
-Container registry like docker registry installer and manager 
+Container registry installer and manager 
 
 # Install
 ``` python

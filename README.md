@@ -10,8 +10,8 @@ Container registry like docker registry installer and manager
 ### Valiables
 | Variable  | shortcut | Description | require | default value |
 | ------------- | ------------- | ------------- | ------------- | ------------- |
-| base technology | b  | Docker, podman, quay.io | optional | Docker |
-| Port  | p  | Deploy on which port | optional | 5000 |
+| base technology | b  | Docker, podman, quay.io | Optional | Docker |
+| Port  | p  | Deploy on which port | Optional | 5000 |
 | isSecure | s | Bool true:- tls and password, false:- no tls and optionally no password also | Optional | True |
 | Authentication | a | Auth credentials, user and password using htpasswd | Optional | admin:admin |
 | cert |  | if isSecure is true then use the cert for tls | Optional | create new slftsing cert and assign |

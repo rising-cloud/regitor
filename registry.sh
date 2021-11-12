@@ -3,7 +3,6 @@ new-registry(){
     read -p "Name of new Registry : " name
     read -p "Enter port on which '$name' to be run : " port
     
-    
     while true
     do
     

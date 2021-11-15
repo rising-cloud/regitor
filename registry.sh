@@ -18,7 +18,8 @@
 #              auth     =  0 or 1  => 0 = (no password  ; 1 means put password) to registry
 #              username =  Username for auth login ; Not needed if auth is 0
 #              password =  Password for auth login ; Not needed if auth is 0
-
+#              cert     =  0 or 1  => 0 = (no certificate  ; 1 means put certificate) to registry
+#
 
 fileReader(){
 
@@ -56,11 +57,12 @@ fileReader(){
 
 }
 
+
 new-registry(){
 
     # $1 => filename
 
-    keys=(name port auth username password)
+    keys=(name port cert auth username password)
     for i in $(seq ${#keys[@]}); do values[$i-1]="<blank>"; done
 
     reqReader[0]() { read -p "Name of new Registry : " values[0]; }
@@ -68,30 +70,45 @@ new-registry(){
     reqReader[2]() { 
         while true
         do
-            read -p "Want to assign password to this registry ? (y/n) : " values[2]
+            read -p "Get certificate of this registry ? (y/n) : " values[2]
             yn=${values[2],,}
             if [[ "$yn" == "y" || "$yn" == "ye" || "$yn" == "yes" ]]; then
                 values[2]=1
                 break
             elif [[ "$yn" == "n" || "$yn" == "no" ]]; then
                 values[2]=0
-                
                 break
             else
                 continue
             fi
-        done 
+        done
     }
-    reqReader[3]() { read -p "Enter username : " values[3]; }
-    reqReader[4]() { read -p "Enter password : " values[4]; }
+    reqReader[3]() { 
+        while true
+        do
+            read -p "Want to assign password to this registry ? (y/n) : " values[3]
+            yn=${values[3],,}
+            if [[ "$yn" == "y" || "$yn" == "ye" || "$yn" == "yes" ]]; then
+                values[3]=1
+                break
+            elif [[ "$yn" == "n" || "$yn" == "no" ]]; then
+                values[3]=0
+                break
+            else
+                continue
+            fi
+        done
+    }
+    reqReader[4]() { read -p "Enter username : " values[3]; }
+    reqReader[5]() { read -p "Enter password : " values[4]; }
 
     if [[ "$1" != "" ]]; then
         fileReader $1 ${keys[@]}
     fi
 
-    if [[ "${values[$2]}" != "0" ]]; then
-        values[3]="<not_required>"
+    if [[ "${values[3]}" == "0" ]]; then
         values[4]="<not_required>"
+        values[5]="<not_required>"
     fi
 
     for i in $(seq ${#values[@]}); 
@@ -101,12 +118,51 @@ new-registry(){
         fi
     done
 
-    if [[ ${values[2]} == "1" ]];
-    then
-        echo password
-    else
-        echo no password
+    name=${values[0]}
+    port=${values[1]}
+    cert=${values[2]} 
+    auth=${values[3]} 
+    username=${values[4]}
+    password=${values[5]}
+
+    mkdir $name
+
+    executor="
+        docker run -d 
+        -p $port 
+        --restart=always 
+        --name $name
+        registry
+    "
+
+    if [[ "$cert" == "1" ]];then
+        mkdir $name/certs
+        executor="
+            $executor
+            -v "$(pwd)"/$name/certs:/certs \
+            -e REGISTRY_HTTP_TLS_CERTIFICATE=$name/certs/domain.crt \
+            -e REGISTRY_HTTP_TLS_KEY=$name/certs/domain.key \"
+        "
     fi
+
+    if [[ "$auth" == "1" ]]; then
+        mkdir $name/auth
+        docker run --entrypoint htpasswd httpd:2 -Bbn testuser testpassword > $name/auth/htpasswd
+
+        executor="
+            $executor
+            -v "$(pwd)"/$name/certs:/certs \
+            -e REGISTRY_HTTP_TLS_CERTIFICATE=$name/certs/domain.crt \
+            -e REGISTRY_HTTP_TLS_KEY=$name/certs/domain.key \"
+        "
+    fi
+
+    executor="
+        $executor
+        registry
+    "
+
+    $executor
 
 }
 

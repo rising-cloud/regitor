@@ -1,3 +1,9 @@
+# Funtion Calling
+#   => place "-f" option before the name of function in cmd (command line)
+#       => Eg. >>> registry -f new-registry [filename]  --- (filename <- optional)
+#       =>     Note = First source this file to run it in this way
+
+
 #file format
 #   => Sequence not necessary
 #   => Every pair of key-value should be in new line
@@ -10,10 +16,8 @@
 #              name     =  Give your custom name to the registry
 #              port     =  Eg. 5000:5000 , 1234:5000 , etc
 #              auth     =  0 or 1  => 0 = (no password  ; 1 means put password) to registry
-#              username =  Username for auth login
-#              password =  Password for auth login
-#
-#       < Other functions under construction! > 
+#              username =  Username for auth login ; Not needed if auth is 0
+#              password =  Password for auth login ; Not needed if auth is 0
 
 
 fileReader(){
@@ -42,7 +46,7 @@ fileReader(){
                         value=$( echo "$line" | cut -d "$splitor" -f 2 )
                         value="${value// /}"
                         values[$e-1]=$value
-                        echo breaking $key = $value
+                        echo $key = $value
                         break
                     fi
                 done
@@ -51,8 +55,6 @@ fileReader(){
     done < $1
 
 }
-
-args=$@
 
 new-registry(){
 
@@ -66,32 +68,28 @@ new-registry(){
     reqReader[2]() { 
         while true
         do
-            read -p "Want to assign password to this registry ? (y/n) : " yn
-            yn=${yn,,}
+            read -p "Want to assign password to this registry ? (y/n) : " values[2]
+            yn=${values[2],,}
             if [[ "$yn" == "y" || "$yn" == "ye" || "$yn" == "yes" ]]; then
-                auth=1
+                values[2]=1
                 break
             elif [[ "$yn" == "n" || "$yn" == "no" ]]; then
-                auth=0
+                values[2]=0
+                
                 break
             else
                 continue
             fi
         done 
     }
-    reqReader[3]() { read -p "Enter username : " values[2]; }
-    reqReader[4]() { read -p "Enter password : " values[3]; }
-
-
-    echo value ${values[@]}
+    reqReader[3]() { read -p "Enter username : " values[3]; }
+    reqReader[4]() { read -p "Enter password : " values[4]; }
 
     if [[ "$1" != "" ]]; then
         fileReader $1 ${keys[@]}
     fi
 
-    if [[ "${values[2]}" == "1" ]]; then
-        echo hooray
-    else
+    if [[ "${values[$2]}" != "0" ]]; then
         values[3]="<not_required>"
         values[4]="<not_required>"
     fi
@@ -103,54 +101,23 @@ new-registry(){
         fi
     done
 
-
     if [[ ${values[2]} == "1" ]];
-        then
-            mkdir $name
-            mkdir $name/auth
-            docker run \
-            --entrypoint htpasswd \
-            httpd:2 -Bbn $username $password > $name/auth/htpasswd
+    then
+        echo password
+    else
+        echo no password
+    fi
 
-            docker run -d \
-            -p 5000:5000 \
-            --restart=always \
-            --name $name \
-            -v "$(pwd)"/auth:/auth \
-            -e "REGISTRY_AUTH=htpasswd" \
-            -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
-            -e REGISTRY_AUTH_HTPASSWD_PATH=/$name/auth/htpasswd \
-            -v "$(pwd)"/certs:/certs \
-            -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
-            -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
-            registry
-            return
-        else
-            echo docker run -d -p $port --restart=always --name $name registry
+}
+
+
+args=("$@")
+
+for arg in $(seq ${#args[@]});
+do
+    if [[ "$1" == "registry" ]]; then
+        if [[ "${args[arg-1]}" == "-f" ]]; then
+            ${args[arg]} ${args[arg+1]}
         fi
-
-}
-
-upload(){
-
-    read -p "Enter image name/id : " image
-    read -p "Name the Image : " name
-    read -p "Enter registry port : " port
-
-    docker tag $image localhost:$port/$name
-    docker push localhost:5000/$name
-}
-
-pull(){
-    read -p "Enter registry port : " port
-    read -p "Enter Image name : " image
-
-    docker pull localhost:$port/$image
-}
-
-stop-registry(){
-    read -p "Enter registry Name : " registry
-    docker container stop $registry
-}
-
-new-registry hello.txt
+    fi
+done

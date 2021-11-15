@@ -25,9 +25,7 @@ fileReader(){
 
     # $1 = filename
 
-    if [[ ! -z $(tail -1c $1) ]]; then
-        echo "" >> $1
-    fi
+    if [[ ! -z $(tail -1c $1) ]]; then echo "" >> $1; fi
 
     splitors=(":" "=" ">")
 
@@ -44,11 +42,11 @@ fileReader(){
                 for e in $(seq ${#keys[@]})
                 do
                     if [[ "${key,,}" == "${keys[$e-1],,}" && ${values[$e-1]} == "<blank>" ]]; then
-                        value=$( echo "$line" | cut -d "$splitor" -f 2 )
-                        value="${value// /}"
-                        values[$e-1]=$value
-                        echo $key = $value
-                        break
+                        value=$( echo "$line" | cut -d "$splitor" -f 2 );
+                        value="${value// /}";
+                        values[$e-1]=$value;
+                        echo $key = $value;
+                        break;
                     fi
                 done
             fi
@@ -65,74 +63,64 @@ new-registry(){
     keys=(name port cert auth username password)
     for i in $(seq ${#keys[@]}); do values[$i-1]="<blank>"; done
 
-    reqReader[0]() { read -p "Name of new Registry : " values[0]; }
-    reqReader[1]() { read -p "Enter port on which this registry is to be run : " values[1]; }
+    reqReader[0]() { 
+        while [[ "${values[0]}" == "<blank>" || "${values[0]}" == "" || -d "${values[0]}" ]];
+        do
+            read -p "Name of new Registry : " values[0]; 
+        done
+    }
+
+    reqReader[1]() { 
+        while [[ ! ${values[1]} =~ [0-9]:[0-9]+$ ]];
+        do 
+            read -p "Enter port on which this registry is to be run : " values[1]; 
+        done
+    }
+
     reqReader[2]() { 
         while true
         do
             read -p "Get certificate of this registry ? (y/n) : " values[2]
             yn=${values[2],,}
-            if [[ "$yn" == "y" || "$yn" == "ye" || "$yn" == "yes" ]]; then
-                values[2]=1
-                break
-            elif [[ "$yn" == "n" || "$yn" == "no" ]]; then
-                values[2]=0
-                break
-            else
-                continue
-            fi
+            
+            if [[ "$yn" == "y" || "$yn" == "ye" || "$yn" == "yes" ]]; then values[2]=1; break;
+            elif [[ "$yn" == "n" || "$yn" == "no" ]]; then values[2]=0; break;
+            else continue; fi
         done
     }
+
     reqReader[3]() { 
         while true
         do
             read -p "Want to assign password to this registry ? (y/n) : " values[3]
             yn=${values[3],,}
-            if [[ "$yn" == "y" || "$yn" == "ye" || "$yn" == "yes" ]]; then
-                values[3]=1
-                break
-            elif [[ "$yn" == "n" || "$yn" == "no" ]]; then
-                values[3]=0
-                break
-            else
-                continue
-            fi
+
+            if [[ "$yn" == "y" || "$yn" == "ye" || "$yn" == "yes" ]]; then values[3]=1; break;
+            elif [[ "$yn" == "n" || "$yn" == "no" ]]; then values[3]=0; break;
+            else continue; fi
         done
     }
+
     reqReader[4]() { read -p "Enter username : " values[3]; }
     reqReader[5]() { read -p "Enter password : " values[4]; }
 
-    if [[ "$1" != "" ]]; then
-        fileReader $1 ${keys[@]}
-    fi
+    if [[ "$1" != "" ]]; then fileReader $1 ${keys[@]}; fi
+    if [[ "${values[3]}" == "0" ]]; then values[4]="<not_required>"; values[5]="<not_required>"; fi
 
-    if [[ "${values[3]}" == "0" ]]; then
-        values[4]="<not_required>"
-        values[5]="<not_required>"
-    fi
+    for i in $(seq ${#values[@]}); do if [[ "${values[$i-1]}" == "<blank>" ]]; then "reqReader[$((i-1))]"; fi done
+    reqReader[1]
 
-    for i in $(seq ${#values[@]}); 
-    do
-        if [[ "${values[$i-1]}" == "<blank>" ]]; then
-            "reqReader[$((i-1))]"
-        fi
-    done
-
-    name=${values[0]}
-    port=${values[1]}
-    cert=${values[2]} 
-    auth=${values[3]} 
-    username=${values[4]}
-    password=${values[5]}
+    name=${values[0]}; port=${values[1]}; cert=${values[2]}; auth=${values[3]}; username=${values[4]}; password=${values[5]}
 
     mkdir $name
+    touch $name/data.txt
+    echo -e "name => $name\nport => $port\ncert => $cert\nauth => $auth\nuser => $username\npass => $password" >> $name/data.txt
 
     executor="
         docker run -d 
         -p $port 
         --restart=always 
         --name $name
-        registry
     "
 
     if [[ "$cert" == "1" ]];then
@@ -177,3 +165,4 @@ do
         fi
     fi
 done
+

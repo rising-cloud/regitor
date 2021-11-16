@@ -31,17 +31,17 @@ fileReader(){
 
     keys=(${@:2})
     values=()
-    for i in $(seq ${#keys[@]}); do values[$i-1]="<blank>"; done
-
+    for i in $(seq ${#keys[@]}); do values[$i-1]=""; done
     while read -r line; do
         for splitor in ${splitors[@]}
         do
             key=$( echo "$line" | cut -d "$splitor" -f 1 )
+            
             if [ ${#key} -lt ${#line} ];then
             key="${key// /}"
                 for e in $(seq ${#keys[@]})
                 do
-                    if [[ "${key,,}" == "${keys[$e-1],,}" && ${values[$e-1]} == "<blank>" ]]; then
+                    if [[ "${key,,}" == "${keys[$e-1],,}" && ${values[$e-1]} == "" ]]; then
                         value=$( echo "$line" | cut -d "$splitor" -f 2 );
                         value="${value// /}";
                         values[$e-1]=$value;
@@ -61,24 +61,24 @@ new-registry(){
     # $1 => filename
 
     keys=(name port cert auth username password)
-    for i in $(seq ${#keys[@]}); do values[$i-1]="<blank>"; done
+    for i in $(seq ${#keys[@]}); do values[$i-1]=""; done
 
     reqReader[0]() { 
-        while [[ "${values[0]}" == "<blank>" || "${values[0]}" == "" || -d "${values[0]}" ]];
+        while [[ ! "${values[0]}" =~ [a-zA-Z0-9] || -z "${values[0]}" || -d "${values[0]}" ]];
         do
             read -p "Name of new Registry : " values[0]; 
         done
     }
 
     reqReader[1]() { 
-        while [[ ! ${values[1]} =~ [0-9]:[0-9]+$ ]];
+        while [[ ! ${values[1]} =~ [0-9]:[0-9]+$ || -z "${values[1]}" ]];
         do 
             read -p "Enter port on which this registry is to be run : " values[1]; 
         done
     }
 
-    reqReader[2]() { 
-        while true
+    reqReader[2]() {
+        while [[ ! "(0 1)" =~ "${values[2]}" || -z "${values[2]}" ]];
         do
             read -p "Get certificate of this registry ? (y/n) : " values[2]
             yn=${values[2],,}
@@ -89,8 +89,8 @@ new-registry(){
         done
     }
 
-    reqReader[3]() { 
-        while true
+    reqReader[3]() {
+        while [[ ! "(0 1)" =~ "${values[3]}" || -z "${values[3]}" ]];
         do
             read -p "Want to assign password to this registry ? (y/n) : " values[3]
             yn=${values[3],,}
@@ -101,14 +101,22 @@ new-registry(){
         done
     }
 
-    reqReader[4]() { read -p "Enter username : " values[3]; }
-    reqReader[5]() { read -p "Enter password : " values[4]; }
+    reqReader[4]() {
+        while [[ ${values[3]} == 1 && -z "${values[4]}" ]];
+        do
+            read -p "Enter username : " values[4]; 
+        done
+    }
 
-    if [[ "$1" != "" ]]; then fileReader $1 ${keys[@]}; fi
-    if [[ "${values[3]}" == "0" ]]; then values[4]="<not_required>"; values[5]="<not_required>"; fi
+    reqReader[5]() {
+        while [[ ${values[3]} == 1 && -z "${values[5]}" ]];
+        do
+            read -p "Enter password : " values[5]; 
+        done
+    }
 
-    for i in $(seq ${#values[@]}); do if [[ "${values[$i-1]}" == "<blank>" ]]; then "reqReader[$((i-1))]"; fi done
-    reqReader[1]
+    if [[ "$1" != "" ]]; then echo $1; fileReader $1 ${keys[@]}; fi
+    for i in $(seq ${#values[@]}); do "reqReader[$((i-1))]"; done
 
     name=${values[0]}; port=${values[1]}; cert=${values[2]}; auth=${values[3]}; username=${values[4]}; password=${values[5]}
 
@@ -150,7 +158,7 @@ new-registry(){
         registry
     "
 
-    $executor
+    echo $executor
 
 }
 
@@ -165,4 +173,3 @@ do
         fi
     fi
 done
-

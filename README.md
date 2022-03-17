@@ -22,7 +22,7 @@ Container registry installer and manager
 
 # Install
 ``` bash
-python regitor-install.sh
+sh regitor.sh install
 ```
 - install: to install the registry on local machine with default settings
 

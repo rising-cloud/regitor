@@ -18,6 +18,7 @@ Container registry installer and manager
     - sync full registry[may be very lengthy job]
   - Notification: send notification on mail, slack etc...
   - Manage fat manifest
+  - Access control...
 
 # Install
 ``` bash

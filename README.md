@@ -10,7 +10,7 @@ Container registry installer and manager
   - Cron sync, sync registry on particular time, user can enable or disable cron with simple cmd.
   - Manual sync, run some cmd to sync.
   - Event based [webhook]
-  - Sync bindings or connections, Registry connection table to store registry details, `.dockerconfigjson`
+  - Sync bindings or **connections**, Registry connection table to store registry details, `.dockerconfigjson` in vault like `gopass`.
   - Sync rules: wild card should work for all.
     - sync particular images, can add more filter like image with particular tag like latest, stable or may be with wildcard like :bvt*
     - sync org, all the images under particular folder

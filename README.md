@@ -1,6 +1,7 @@
 # Regitor
 Container registry installer and manager
 - Install `Docker` based registry on Linux systems
+- Install `Docker` based registry on **Windows** systems
 - Install `Podman` based registry on Linux systems
 - Install `Docker` based `quay.io` registry on Linux systems
 - Install `Podman` based `quay.io` registry on Linux systems
@@ -15,6 +16,8 @@ Container registry installer and manager
     - sync particular images, can add more filter like image with particular tag like latest, stable or may be with wildcard like :bvt*
     - sync org, all the images under particular folder
     - sync full registry[may be very lengthy job]
+  - Notification: send notification on mail, slack etc...
+  - Manage fat manifest
 
 # Install
 ``` bash

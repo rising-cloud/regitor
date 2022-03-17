@@ -1,3 +1,5 @@
+- run image using docker run or docker compose rather script.
+
 - Install `Docker` based registry on **Windows** systems
 - Install `Podman` based registry on Linux systems
 - Install `Docker` based `quay.io` registry on Linux systems
